@@ -14,9 +14,18 @@ class Crawler:
     def __init__(self):
         self.base_url = "https://ojk.go.id/id/kanal/perbankan/data-dan-statistik/laporan-keuangan-perbankan/Default.aspx"
         self.frame_url = "https://cfs.ojk.go.id/cfs/ReportViewerForm.aspx?"
+
         self.options = Options()
         # self.options.add_argument("--headless")
         self.options.add_argument("--start-maximized")
+
+        prefs = {"profile.default_content_settings.popups": 0,    
+        "download.default_directory":r"/home/rianaditro/projects/data_scraping/ojk/downloaded_files",
+        "download.prompt_for_download": False, 
+        "download.directory_upgrade": True}
+
+        self.options.add_experimental_option("prefs", prefs)
+
         self.driver = webdriver.Chrome(options=self.options)
         self.wait = WebDriverWait(self.driver, 10)
 
@@ -39,10 +48,19 @@ class Crawler:
         return f"{self.frame_url}BankCodeNumber={bank_code}&BankCode={bank_name}&Month={month}&Year={year}&FinancialReportPeriodTypeCode=B&FinancialReportTypeCode={report_code}"
 
     def get_excel(self, bank:str, year:int, month:int, report_code:str):
+        """Opening the url and clicking the excel download button"""
         url = self._get_valid_url(bank, year, month, report_code)        
-
         self.driver.get(url)
 
-        self._find_until_clickable("CFSReportViewer_ctl05_ctl04_ctl00_ButtonLink").click()
-        self.driver.find_element(By.LINK_TEXT, "Excel").click()
+        try:
+            self._find_until_clickable("CFSReportViewer_ctl05_ctl04_ctl00_ButtonLink").click()
+            self.driver.find_element(By.LINK_TEXT, "Excel").click()
+            return True
+
+        except Exception as e:
+            if "Tidak Tersedia" not in self.driver.page_source:
+                print("Laporan Tidak Tersedia")
+            else:
+                print(e)
+            return False
 

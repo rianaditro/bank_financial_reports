@@ -1,4 +1,4 @@
-import time
+import time, os
 
 from spider.crawler import Crawler
 
@@ -19,4 +19,20 @@ if __name__ == "__main__":
         for year in YEARS:
             for month in MONTHS:
                 for report_code in REPORT_CODES.values():
-                    crawler.get_excel(bank, year, month, report_code)
+                    filename = f"{bank}_{year}_{month}_{report_code}.xlsx"
+                    excel = crawler.get_excel(bank, year, month, report_code)
+                    
+                    if excel:
+                        files = os.listdir("downloaded_files")
+
+                        while True:
+                            time.sleep(2)
+                            if len(files) < len(os.listdir("downloaded_files")):
+                                for file in os.listdir("downloaded_files"):
+                                    if file not in files:
+                                        os.rename(f"downloaded_files/{file}", f"downloaded_files/{filename}")
+                                break
+                            else:
+                                print("Waiting for file to download")
+
+                raise StopIteration
