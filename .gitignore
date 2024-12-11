@@ -162,4 +162,9 @@ cython_debug/
 #.idea/
 
 downloaded_files/
+laba_rugi/
+neraca/
+rasio/
 Pip*
+*.xlsx
+val*
