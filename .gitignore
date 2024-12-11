@@ -167,4 +167,4 @@ neraca/
 rasio/
 Pip*
 *.xlsx
-val*
+*.json
