@@ -10,9 +10,9 @@ from zipfile import BadZipFile
 
 def check_existence(mode:str, filename:str):
     if os.path.exists(f"{mode}/{filename}"):
-        status = "downloaded"
+        status = "file found"
     else:
-        status = "missed"
+        status = "file not found"
     return status
 
 def generate_url(bank:str, year:int, month:int, mode:str):
@@ -85,26 +85,25 @@ def validate_temp_result(filename:str):
     updated_status = 0
     for data in json_data:
         # Check if file is readable
-        if data["status"] == "downloaded":
-            try:
-                print(f"Checking file {data['filename']}")
-                df = pandas.read_excel(f"{mode}/{data['filename']}")
-            except BadZipFile:
-                data["status"] = "corrupted"
-                print("Corrupted file found.")
-                updated_status += 1
-            except:
-                data["status"] = "unknown_error"
-                print("Unknown error")
-                updated_status += 1
+        try:
+            print(f"Checking file {data['filename']}")
+            df = pandas.read_excel(f"{mode}/{data['filename']}")
+        except BadZipFile:
+            data["status"] = "corrupted"
+            print("Corrupted file found.")
+            updated_status += 1
+        except:
+            data["status"] = "unknown_error"
+            print("Unknown error")
+            updated_status += 1
     print(f"Updated Status: {updated_status}")
     
-    with open(f"{filename}_2", 'w') as file:
+    with open(f"{filename.replace('.json', '')}_2.json", 'w') as file:
         json.dump(json_data, file, indent=4)
             
 
 if __name__ == "__main__":
     # # Run for the first time
-    # generate_json()
+    generate_json()
 
-    validate_temp_result("validator_rasio.json")
+    # validate_temp_result("validator_neraca.json")

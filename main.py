@@ -1,5 +1,8 @@
 import time, json, os, argparse
 
+# Revision import
+from urllib.parse import urlparse, parse_qs
+
 from spider.crawler import Crawler
 
 
@@ -53,6 +56,93 @@ def main():
 
     browser_loop(args.mode, args.filename)
 
+def additional_download():
+    with open("extension/missing_or_empty_rasio.json", "r") as file:
+        json_data = json.load(file)
+    
+    mode = "rasio"
+    crawler = Crawler(mode)
+
+    for i,data in enumerate(json_data):
+        print(f"Processing {i+1} of {len(json_data)}: {((i+1)/len(json_data))*100:.2f}%")
+        url = json_data[data]
+        
+        # convert url to filename
+        # Parse the URL
+        parsed_url = urlparse(url)
+
+        # Extract query parameters as a dictionary
+        params = parse_qs(parsed_url.query)
+
+        # Convert single-item lists to plain values (optional)
+        params = {key: value[0] if len(value) == 1 else value for key, value in params.items()}
+        report_code = params['FinancialReportTypeCode']
+        if report_code == "PGWS-908-00021":
+            mode = "neraca"
+        elif report_code == "PGWS-908-00022":
+            mode = "laba_rugi"
+        else:
+            mode = "rasio"
+
+        filename = f"{params['BankCodeNumber']}-{params['BankCode'].replace(' ', '+')}_{params['Year']}_{params['Month']}_{mode}.xlsx"
+
+        data = {
+            "filename": filename,
+            "file_url": url,
+        }
+
+        # check if file already downloaded
+        if os.path.exists(f"{crawler.download_folder}/{filename}"):
+            print(f"File already downloaded: {filename}")
+            continue
+        else:
+            print(f"Processing {data['filename']}")
+            result = crawler.get_excel(data)
+            print(result)
+
+def check_not_found_files():
+    with open("check_result.json", "r") as file:
+        all_data = json.load(file)
+        all_data = all_data[2:]
+    
+    for data in all_data:
+        mode = data["mode"]
+        details = data["data"]
+        max = len(details)
+
+        crawler = Crawler(mode)
+
+        for i, detail_data in enumerate(details):
+            print(f"Processing {i+1} of {max}: {((i+1)/max)*100:.2f}%")
+            check_result = detail_data["check_result"]
+            filename = detail_data["filename"]
+            # check if file already downloaded
+            if check_result == "not_exist":
+                if "2020" in detail_data["file_url"]:
+                    detail_data["file_url"] += "A"
+                    if os.path.exists(f"{crawler.download_folder}/{filename}"):
+                        print(f"File already downloaded: {filename}")
+                        result = "already downloaded"
+                    else:
+                        result = crawler.get_excel(detail_data)
+                        detail_data["check_result"] = result
+            else:
+                continue
+            # if os.path.exists(f"{crawler.download_folder}/{filename}"):
+            #     print(f"File already downloaded: {filename}")
+            #     result = "already downloaded"
+            # else:
+            #     print(f"Processing {detail_data['filename']}")
+            #     result = crawler.get_excel(detail_data)
+            # detail_data["check_result"] = result
+
+    with open("check_result2.json", "w") as file:
+        json.dump(all_data, file, indent=4)
+                
+
+
 
 if __name__ == "__main__":
-    main()
+    # main()
+    # data_dict = additional_download()
+    check_not_found_files()

@@ -52,10 +52,19 @@ class Crawler:
             new_file = current_files - existing_files
 
             if new_file: # DEBUG: This should be only one
-                os.rename(f"{self.download_folder}/{list(new_file)[0]}", f"{self.download_folder}/{filename}")
-                print(f"{filename} downloaded")
-                status_code = 1
-                return status_code
+                new_filename = list(new_file)[0]
+                try:
+                    os.rename(f"{self.download_folder}/{new_filename}", f"{self.download_folder}/{filename}")
+                except FileNotFoundError:
+                    if ".crdownload" in new_filename:
+                        new_filename = new_filename.replace(".crdownload", "")
+                        os.rename(f"{self.download_folder}/{new_filename}", f"{self.download_folder}/{filename}")
+                    else:
+                        raise
+                finally:                   
+                    print(f"{filename} downloaded")
+                    status_code = 1
+                    return status_code
 
             if wait_time > 10:
                 print(f"Download time exceed: {self.driver.current_url}")
